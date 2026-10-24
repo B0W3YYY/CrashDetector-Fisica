@@ -55,6 +55,20 @@
       </div>
     </section>
 
+    <section class="paneles">
+      <div class="panel">
+        <h2>Cantidad de movimiento del sistema vs tiempo</h2>
+        <div class="grafica"><canvas id="graficaMomento"></canvas></div>
+        <p class="nota">Σp<sub>x</sub> = m<sub>A</sub>v<sub>Ax</sub> + m<sub>B</sub>v<sub>Bx</sub> y Σp<sub>y</sub> = m<sub>A</sub>v<sub>Ay</sub> + m<sub>B</sub>v<sub>By</sub>.
+          En el instante del impacto (línea vertical) el momento total no salta: se conserva. Antes y después solo lo reduce la fricción.</p>
+      </div>
+      <div class="panel">
+        <h2>Banda de incertidumbre vs límite legal</h2>
+        <div class="grafica"><canvas id="graficaIncertidumbre"></canvas></div>
+        <p class="nota">Cada barra va de la rapidez calculada con μ<sub>min</sub> a la calculada con μ<sub>max</sub>; el punto es el valor con μ nominal y la raya roja, el límite legal de cada vía.</p>
+      </div>
+    </section>
+
     <section class="panel" id="resultados" hidden>
       <h2>Resultados de la reconstrucción</h2>
       <p class="nota">Intervalos calculados con μ<sub>min</sub> – μ<sub>max</sub>.</p>

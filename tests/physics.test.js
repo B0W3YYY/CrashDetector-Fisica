@@ -96,24 +96,7 @@ test('simulación hacia adelante: impacto en el origen y reposo a d_post', () =>
   for (let k = 1; k < tras.length; k++) assert.ok(tras[k].ekA <= tras[k - 1].ekA + 1e-9);
 });
 
-test('validación analítica: distancia de parada coincide con v²/(2μg)', () => {
-  const mu = 0.7, v = 18, g = 9.81;
-  const distanciaExacta = (v * v) / (2 * mu * g);
-  const escenario = {
-    ...ESCENARIO_EJEMPLO,
-    dPreA: 0, dPreB: 0,
-    dPostA: distanciaExacta, dPostB: 0,
-    thetaA: 0, thetaB: Math.PI / 2,
-    muMin: mu, muMax: mu,
-  };
-  const reconstruccion = reconstruirConMu(escenario, mu, g);
-  const simulacion = simularHaciaAdelante(escenario, reconstruccion, 0.01, g);
-  assert.ok(verificarReconstruccion(escenario, simulacion).ok);
-  cerca(Math.hypot(
-    simulacion.muestras.at(-1).xA,
-    simulacion.muestras.at(-1).yA,
-  ), (reconstruccion.uA ** 2) / (2 * mu * g));
-});
+// Las pruebas de validación analítica están en tests/validacion-analitica.test.js.
 
 test('comparación con límite legal', () => {
   assert.equal(compararConLimite(60 / 3.6, 70 / 3.6, 50 / 3.6), 'excede');
