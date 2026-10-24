@@ -11,7 +11,7 @@ impacto, y luego simula hacia adelante para verificar que se reproduce la eviden
 
 > Los resultados son estimaciones basadas en el modelo y no constituyen un dictamen pericial.
 
-- **Aplicación desplegada:** https://crashdetector-fisica.netlify.app  <!-- actualizar si Netlify asigna otro nombre -->
+- **Aplicación desplegada:** https://crash-detector.netlify.app
 - **Repositorio:** https://github.com/B0W3YYY/CrashDetector-Fisica
 
 ## Requisitos
@@ -78,21 +78,23 @@ salida se miden desde +X en sentido antihorario.
 | Función | Recibe | Devuelve |
 |---|---|---|
 | `G` | — | gravedad estándar, 9,81 m/s² |
-| `validarNumero(nombre, valor, min, max)` | valor y límites | el valor, o lanza `Error` si no es finito o está fuera de rango |
+| `validarNumero(nombre, valor, min, max)` | valor y límites (`min` = −∞ y `max` = +∞ por defecto) | el valor, o lanza `Error` si no es finito o está fuera de rango |
 | `calcularVelocidadPorFrenado(distancia, mu, g)` | distancia (m), μ (adim.), g (m/s²) | rapidez inicial para detenerse en esa distancia, √(2μgd) (m/s) |
 | `calcularVelocidadAntesDeFrenar(vFinal, distancia, mu, g)` | rapidez final (m/s), distancia (m), μ, g (m/s²) | rapidez al inicio de la frenada, √(vf² + 2μgd) (m/s) |
 | `calcularMomento2D(masa, velocidad, angulo)` | masa (kg), rapidez (m/s), ángulo (rad) | `{ px, py }` (kg·m/s) |
 | `calcularEnergiaCinetica(masa, velocidad)` | masa (kg), rapidez (m/s) | ½mv² (J) |
 | `reconstruirVelocidadesPreImpacto({ mA, mB, uA, uB, thetaA, thetaB })` | masas (kg), rapideces post-impacto (m/s), ángulos (rad) | `{ vA, vB }` en el impacto (m/s) |
 | `calcularEnergiaDisipada(energiaAntes, energiaDespues)` | energías (J) | `{ disipada (J), porcentaje (%) }` |
-| `clasificarColision(porcentajePerdido, mismoMovimientoFinal)` | % perdido, booleano | texto: elástica / inelástica / perfectamente inelástica |
+| `clasificarColision(porcentajePerdido, mismoMovimientoFinal)` | % perdido, booleano | texto: `'Inconsistente (gana energía: revise los datos)'` si el % es negativo, `'Perfectamente inelástica (salen juntos)'` si salen juntos, `'Aproximadamente elástica'` si se pierde menos del 1 % o `'Inelástica'` |
 | `validarEscenario(escenario)` | escenario en SI | el escenario, o lanza `Error` con mensaje legible |
-| `reconstruirConMu(escenario, mu, g)` | escenario, μ, g (m/s²) | `uA, uB, vA, vB, v0A, v0B` (m/s); `ekInicial, ekImpactoAntes, ekImpactoDespues, energiaDisipadaChoque, energiaFriccionPre, energiaFriccionPost` (J); `porcentajeDisipadoChoque` (%); `clasificacion` |
+| `reconstruirConMu(escenario, mu, g)` | escenario, μ, g (m/s²) | `mu` (adim.); `uA, uB, vA, vB, v0A, v0B` (m/s); `ekInicial, ekImpactoAntes, ekImpactoDespues, energiaDisipadaChoque, energiaFriccionPre, energiaFriccionPost` (J); `porcentajeDisipadoChoque` (%); `clasificacion` |
 | `propagarIncertidumbre(escenario, g)` | escenario, g | `{ min, nominal, max }`: reconstrucciones con μmin, (μmin+μmax)/2 y μmax |
 | `compararConLimite(vMin, vMax, limite)` | rapideces y límite (m/s) | `'excede'`, `'no excede'` o `'indeterminado'` |
 | `simularHaciaAdelante(escenario, reconstruccion, dt, g, tPrevio)` | escenario, resultado de `reconstruirConMu`, dt (s, por defecto 0,01), g, tPrevio (s de marcha libre, por defecto 0,5) | `{ tImpacto (s), muestras }`; cada muestra: `t` (s), `xA, yA, xB, yB` (m), `vA, vB` (m/s), `pxA, pyA, pxB, pyB` (kg·m/s), `ekA, ekB` (J) |
-| `verificarReconstruccion(escenario, simulacion, tolerancia)` | escenario, simulación, tolerancia (m) | `{ ok, errorFinalA, errorFinalB }` (m) |
+| `verificarReconstruccion(escenario, simulacion, tolerancia)` | escenario, simulación, tolerancia (m, por defecto 1e-6) | `{ ok, errorFinalA, errorFinalB }` (m) |
 | `ESCENARIO_EJEMPLO` | — | escenario de ejemplo en SI |
+
+En todas las funciones que reciben `g`, su valor por defecto es `G` (9,81 m/s²).
 
 **Escenario:** `mA`, `mB` (kg, 800–3500); `dPreA`, `dPreB`, `dPostA`, `dPostB` (m, 0–50); `thetaA`, `thetaB`
 (rad, 0–2π); `muMin ≤ muMax` (0,40–0,90); `vLimA`, `vLimB` (m/s, equivalentes a 30–120 km/h).
