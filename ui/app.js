@@ -2,7 +2,7 @@
 // No contiene fórmulas físicas; solo conversión de unidades y renderizado.
 import {
   ESCENARIO_EJEMPLO, validarEscenario, propagarIncertidumbre, simularHaciaAdelante,
-  verificarReconstruccion, compararConLimite, msAKmh,
+  verificarReconstruccion, compararConLimite,
 } from '../src/physics/crash.js';
 
 const DT = 0.01; // s, paso de la simulación
@@ -10,6 +10,8 @@ const CAMPOS = Object.keys(ESCENARIO_EJEMPLO);
 const COLOR_A = '#f76707';
 const COLOR_B = '#1c5bd9';
 const LARGO_CARRO = 4.4; // m, solo para el dibujo
+const kmhAMs = (v) => v / 3.6;
+const msAKmh = (v) => v * 3.6;
 
 // Imágenes vistas desde arriba con el frente hacia arriba.
 const IMAGENES = { A: new Image(), B: new Image() };
@@ -46,7 +48,12 @@ const graficaRapidez = crearGrafica('graficaRapidez', 'Rapidez (km/h)', [['Vehí
 const graficaEnergia = crearGrafica('graficaEnergia', 'Energía cinética (kJ)', [['Vehículo A', COLOR_A], ['Vehículo B', COLOR_B], ['Sistema', '#495057']]);
 
 function cargarEjemplo() {
-  for (const k of CAMPOS) form.elements[k].value = ESCENARIO_EJEMPLO[k];
+  for (const k of CAMPOS) {
+    const valor = ESCENARIO_EJEMPLO[k];
+    form.elements[k].value = k.startsWith('theta') ? Number(((valor * 180) / Math.PI).toFixed(6))
+      : k.startsWith('vLim') ? msAKmh(valor)
+        : valor;
+  }
 }
 
 function leerFormulario() {
@@ -54,7 +61,10 @@ function leerFormulario() {
   for (const k of CAMPOS) {
     const input = form.elements[k];
     input.removeAttribute('aria-invalid');
-    e[k] = input.value.trim() === '' ? NaN : Number(input.value);
+    const valor = input.value.trim() === '' ? NaN : Number(input.value);
+    e[k] = k.startsWith('theta') ? (valor * Math.PI) / 180
+      : k.startsWith('vLim') ? kmhAMs(valor)
+        : valor;
   }
   return e;
 }
@@ -81,10 +91,10 @@ function mostrarResultados(e, inc) {
     [magnitud('Rapidez al inicio de las marcas de frenado', 'v₀'), intervalo(inc, 'v0A'), intervalo(inc, 'v0B')],
     [magnitud('Rapidez en el instante del impacto', 'v'), intervalo(inc, 'vA'), intervalo(inc, 'vB')],
     [magnitud('Rapidez inmediatamente después del impacto', 'u'), intervalo(inc, 'uA'), intervalo(inc, 'uB')],
-    [magnitud('Límite legal', 'v<sub>lim</sub>'), conUnidad(e.vLimA, 'km/h'), conUnidad(e.vLimB, 'km/h')],
+    [magnitud('Límite legal', 'v<sub>lim</sub>'), conUnidad(msAKmh(e.vLimA), 'km/h'), conUnidad(msAKmh(e.vLimB), 'km/h')],
   ];
   const veredicto = (k, lim) => {
-    const r = compararConLimite(msAKmh(inc.min[k]), msAKmh(inc.max[k]), lim);
+    const r = compararConLimite(inc.min[k], inc.max[k], lim);
     const detalle = r === 'indeterminado' ? '<span class="detalle">el intervalo contiene el límite</span>' : '';
     return `<span class="${r.replace(' ', '-')}">${r}</span>${detalle}`;
   };

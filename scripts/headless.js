@@ -3,11 +3,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import {
-  ESCENARIO_EJEMPLO, propagarIncertidumbre, simularHaciaAdelante, verificarReconstruccion, msAKmh,
+  ESCENARIO_EJEMPLO, propagarIncertidumbre, simularHaciaAdelante, verificarReconstruccion,
 } from '../src/physics/crash.js';
 
 const DT = 0.01; // s
 const salida = resolve(process.argv[2] ?? 'output/simulacion.csv');
+const msAKmh = (v) => v * 3.6;
 
 const COLUMNAS = [
   ['t_s', 't'],

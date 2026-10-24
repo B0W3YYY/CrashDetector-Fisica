@@ -1,7 +1,7 @@
 // CrashDetector — librería física (sin dependencias del navegador).
-// Unidades SI en todas las funciones: kg, m, s, m/s, J, kg·m/s, rad internamente.
+// Unidades SI en todas las funciones: kg, m, s, m/s, rad, J y kg·m/s.
 // Convención de ejes (Avance 1): origen en el punto de impacto; A circula en +X
-// antes del choque y B en +Y. Los ángulos de salida se miden desde +X, en grados, 
+// antes del choque y B en +Y. Los ángulos de salida se miden desde +X en radianes,
 // en sentido antihorario.
 
 export const G = 9.81; // m/s²
@@ -15,10 +15,6 @@ export function validarNumero(nombre, valor, min = -Infinity, max = Infinity) {
     throw new Error(`${nombre} debe estar entre ${min} y ${max} (recibido ${valor}).`);
   }
   return valor;
-}
-
-export function gradosARadianes(grados) {
-  return (grados * Math.PI) / 180;
 }
 
 /**
@@ -51,15 +47,14 @@ export function calcularVelocidadAntesDeFrenar(vFinal, distancia, mu, g = G) {
  * Componentes del momento lineal: px = m·v·cos(θ), py = m·v·sin(θ).
  * @param {number} masa kg (> 0)
  * @param {number} velocidad rapidez en m/s (>= 0)
- * @param {number} angulo grados desde +X
+ * @param {number} angulo radianes desde +X
  * @returns {{px:number, py:number}} kg·m/s
  */
 export function calcularMomento2D(masa, velocidad, angulo) {
   validarNumero('masa', masa, Number.MIN_VALUE);
   validarNumero('velocidad', velocidad, 0);
   validarNumero('angulo', angulo);
-  const t = gradosARadianes(angulo);
-  return { px: masa * velocidad * Math.cos(t), py: masa * velocidad * Math.sin(t) };
+  return { px: masa * velocidad * Math.cos(angulo), py: masa * velocidad * Math.sin(angulo) };
 }
 
 /**
@@ -70,27 +65,28 @@ export function calcularMomento2D(masa, velocidad, angulo) {
  */
 export function calcularEnergiaCinetica(masa, velocidad) {
   validarNumero('masa', masa, 0);
-  validarNumero('velocidad', velocidad);
+  validarNumero('velocidad', velocidad, 0);
   return 0.5 * masa * velocidad * velocidad;
 }
 
 /**
  * Valida el escenario completo del Avance 1. Lanza Error con mensaje legible.
  * Parámetros: mA, mB (kg, 800–3500); dPreA, dPreB, dPostA, dPostB (m, 0–50);
- * thetaA, thetaB (°, 0–360); muMin <= muMax (0.40–0.90); vLimA, vLimB (km/h, 30–120).
+ * thetaA, thetaB (rad, 0–2π); muMin <= muMax (0.40–0.90);
+ * vLimA, vLimB (m/s, 8.333333333333334–33.333333333333336).
  */
 export function validarEscenario(e) {
   if (!e || typeof e !== 'object') throw new Error('El escenario debe ser un objeto.');
   validarNumero('mA', e.mA, 800, 3500);
   validarNumero('mB', e.mB, 800, 3500);
   for (const k of ['dPreA', 'dPreB', 'dPostA', 'dPostB']) validarNumero(k, e[k], 0, 50);
-  validarNumero('thetaA', e.thetaA, 0, 360);
-  validarNumero('thetaB', e.thetaB, 0, 360);
+  validarNumero('thetaA', e.thetaA, 0, 2 * Math.PI);
+  validarNumero('thetaB', e.thetaB, 0, 2 * Math.PI);
   validarNumero('muMin', e.muMin, 0.4, 0.9);
   validarNumero('muMax', e.muMax, 0.4, 0.9);
   if (e.muMin > e.muMax) throw new Error('muMin debe ser menor o igual que muMax.');
-  validarNumero('vLimA', e.vLimA, 30, 120);
-  validarNumero('vLimB', e.vLimB, 30, 120);
+  validarNumero('vLimA', e.vLimA, 8.333333333333334, 33.333333333333336);
+  validarNumero('vLimB', e.vLimB, 8.333333333333334, 33.333333333333336);
   if (e.dPostA === 0 && e.dPostB === 0) {
     throw new Error('Ambas distancias post-impacto son 0: no hay momento posterior para reconstruir.');
   }
@@ -103,7 +99,7 @@ export function validarEscenario(e) {
  *   X: mA·vA = mA·uA·cos θA + mB·uB·cos θB
  *   Y: mB·vB = mA·uA·sin θA + mB·uB·sin θB
  * Dos ecuaciones lineales, dos incógnitas (vA, vB) ⇒ solución única.
- * @param {{mA,mB,uA,uB,thetaA,thetaB}} p masas en kg, rapideces post-impacto en m/s, ángulos en °
+ * @param {{mA,mB,uA,uB,thetaA,thetaB}} p masas en kg, rapideces post-impacto en m/s, ángulos en rad
  * @returns {{vA:number, vB:number}} rapideces en el instante del impacto, m/s
  * @throws si alguna rapidez resulta negativa (datos incompatibles con las direcciones supuestas)
  */
@@ -153,6 +149,9 @@ export function clasificarColision(porcentajePerdido, mismoMovimientoFinal) {
  * @returns objeto con rapideces (m/s), energías (J) y clasificación
  */
 export function reconstruirConMu(e, mu, g = G) {
+  validarEscenario(e);
+  validarNumero('mu', mu, 0.4, 0.9);
+  validarNumero('g', g, Number.MIN_VALUE);
   const uA = calcularVelocidadPorFrenado(e.dPostA, mu, g);
   const uB = calcularVelocidadPorFrenado(e.dPostB, mu, g);
   const { vA, vB } = reconstruirVelocidadesPreImpacto({
@@ -163,7 +162,8 @@ export function reconstruirConMu(e, mu, g = G) {
   const ekImpactoAntes = calcularEnergiaCinetica(e.mA, vA) + calcularEnergiaCinetica(e.mB, vB);
   const ekImpactoDespues = calcularEnergiaCinetica(e.mA, uA) + calcularEnergiaCinetica(e.mB, uB);
   const choque = calcularEnergiaDisipada(ekImpactoAntes, ekImpactoDespues);
-  const mismoFinal = Math.abs(uA - uB) < 1e-9 && Math.abs(((e.thetaA - e.thetaB) % 360)) < 1e-9;
+  const diferenciaAngular = Math.atan2(Math.sin(e.thetaA - e.thetaB), Math.cos(e.thetaA - e.thetaB));
+  const mismoFinal = Math.abs(uA - uB) < 1e-9 && Math.abs(diferenciaAngular) < 1e-9;
   return {
     mu, uA, uB, vA, vB, v0A, v0B,
     ekInicial: calcularEnergiaCinetica(e.mA, v0A) + calcularEnergiaCinetica(e.mB, v0B),
@@ -186,6 +186,7 @@ export function reconstruirConMu(e, mu, g = G) {
  */
 export function propagarIncertidumbre(e, g = G) {
   validarEscenario(e);
+  validarNumero('g', g, Number.MIN_VALUE);
   return {
     min: reconstruirConMu(e, e.muMin, g),
     nominal: reconstruirConMu(e, (e.muMin + e.muMax) / 2, g),
@@ -194,16 +195,18 @@ export function propagarIncertidumbre(e, g = G) {
 }
 
 /**
- * Compara la rapidez en el inicio de las marcas (km/h) con el límite legal.
+ * Compara rapideces y límite legal en m/s.
  * @returns {'excede'|'no excede'|'indeterminado'} según si todo el intervalo supera o no el límite
  */
-export function compararConLimite(vMinKmh, vMaxKmh, limiteKmh) {
-  if (vMinKmh > limiteKmh) return 'excede';
-  if (vMaxKmh <= limiteKmh) return 'no excede';
+export function compararConLimite(vMin, vMax, limite) {
+  validarNumero('vMin', vMin, 0);
+  validarNumero('vMax', vMax, 0);
+  validarNumero('limite', limite, 0);
+  if (vMin > vMax) throw new Error('vMin debe ser menor o igual que vMax.');
+  if (vMin > limite) return 'excede';
+  if (vMax <= limite) return 'no excede';
   return 'indeterminado';
 }
-
-export const msAKmh = (v) => v * 3.6;
 
 /** Actualización cinemática exacta para aceleración constante -mu·g que se detiene en v=0. */
 function avanzarFrenado(s, v, desac, dt) {
@@ -225,7 +228,11 @@ function avanzarFrenado(s, v, desac, dt) {
  * @returns {{tImpacto:number, muestras:Array<object>}} muestras con t (s), x,y (m), v (m/s), px,py (kg·m/s), ek (J)
  */
 export function simularHaciaAdelante(e, r, dt = 0.01, g = G) {
+  validarEscenario(e);
+  validarNumero('mu', r.mu, 0.4, 0.9);
+  for (const k of ['uA', 'uB', 'vA', 'vB', 'v0A', 'v0B']) validarNumero(k, r[k], 0);
   validarNumero('dt', dt, 1e-4, 1);
+  validarNumero('g', g, Number.MIN_VALUE);
   const desac = r.mu * g;
   const tFrenA = (r.v0A - r.vA) / desac;
   const tFrenB = (r.v0B - r.vB) / desac;
@@ -237,8 +244,8 @@ export function simularHaciaAdelante(e, r, dt = 0.01, g = G) {
 
   // Estado escalar a lo largo de cada eje de movimiento: s = distancia recorrida en la fase.
   const vehiculos = [
-    { m: e.mA, v0: r.v0A, dPre: e.dPreA, u: r.uA, theta: gradosARadianes(e.thetaA), dir: [1, 0], tFren: tFrenA },
-    { m: e.mB, v0: r.v0B, dPre: e.dPreB, u: r.uB, theta: gradosARadianes(e.thetaB), dir: [0, 1], tFren: tFrenB },
+    { m: e.mA, v0: r.v0A, dPre: e.dPreA, u: r.uA, theta: e.thetaA, dir: [1, 0], tFren: tFrenA },
+    { m: e.mB, v0: r.v0B, dPre: e.dPreB, u: r.uB, theta: e.thetaB, dir: [0, 1], tFren: tFrenB },
   ].map((veh) => ({ ...veh, fase: 'pre', s: 0, v: veh.v0 }));
 
   // Posición inicial: retroceder d_pre + tramo a velocidad constante.
@@ -297,7 +304,7 @@ export const ESCENARIO_EJEMPLO = Object.freeze({
   mA: 1500, mB: 1200,
   dPreA: 12, dPreB: 6,
   dPostA: 14, dPostB: 10,
-  thetaA: 30, thetaB: 60,
+  thetaA: Math.PI / 6, thetaB: Math.PI / 3,
   muMin: 0.65, muMax: 0.8,
-  vLimA: 50, vLimB: 50,
+  vLimA: 13.88888888888889, vLimB: 13.88888888888889,
 });
