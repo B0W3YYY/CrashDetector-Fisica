@@ -2,7 +2,7 @@
 
 **Reconstructor forense de accidentes de tránsito** — Proyecto de simulación, FUN-18 Física I, Universidad CENFOTEC (III C 2026).
 
-Grupo B: Kai Leiva Chavarría, Josué Morales Quirós, Paz Naranjo Bonilla.
+Grupo B: Kai Leiva Chavarría, Josué Morales Quirós, Paz Naranjo Bonilla, Branden
 
 Simulación educativa que reconstruye la rapidez de dos vehículos que chocan en una intersección. A partir de las masas,
 las marcas de frenado, las distancias de deslizamiento, los ángulos de salida y el coeficiente de fricción, el motor
