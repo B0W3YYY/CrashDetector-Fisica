@@ -225,18 +225,21 @@ function avanzarFrenado(s, v, desac, dt) {
  * @param {object} e escenario validado
  * @param {object} r resultado de reconstruirConMu
  * @param {number} [dt=0.01] s
+ * @param {number} [g=9.81] m/s²
+ * @param {number} [tPrevio=0.5] s de marcha a velocidad constante (sin fricción) antes de las marcas
  * @returns {{tImpacto:number, muestras:Array<object>}} muestras con t (s), x,y (m), v (m/s), px,py (kg·m/s), ek (J)
  */
-export function simularHaciaAdelante(e, r, dt = 0.01, g = G) {
+export function simularHaciaAdelante(e, r, dt = 0.01, g = G, tPrevio = 0.5) {
   validarEscenario(e);
   validarNumero('mu', r.mu, 0.4, 0.9);
   for (const k of ['uA', 'uB', 'vA', 'vB', 'v0A', 'v0B']) validarNumero(k, r[k], 0);
   validarNumero('dt', dt, 1e-4, 1);
   validarNumero('g', g, Number.MIN_VALUE);
+  validarNumero('tPrevio', tPrevio, 0, 60);
   const desac = r.mu * g;
   const tFrenA = (r.v0A - r.vA) / desac;
   const tFrenB = (r.v0B - r.vB) / desac;
-  const tImpacto = Math.max(tFrenA, tFrenB) + 0.5; // 0,5 s de marcha previa visible
+  const tImpacto = Math.max(tFrenA, tFrenB) + tPrevio; // marcha previa a velocidad constante
   const tFinA = r.uA / desac;
   const tFinB = r.uB / desac;
   const tTotal = tImpacto + Math.max(tFinA, tFinB) + 0.5;
@@ -299,7 +302,7 @@ export function verificarReconstruccion(e, simulacion, tolerancia = 1e-6) {
   return { ok: errorFinalA <= tolerancia && errorFinalB <= tolerancia, errorFinalA, errorFinalB };
 }
 
-/** Escenario de ejemplo documentado en el README (usado por el script headless y la UI). */
+/** Escenario de ejemplo descrito en el README (usado por el script headless y la UI). */
 export const ESCENARIO_EJEMPLO = Object.freeze({
   mA: 1500, mB: 1200,
   dPreA: 12, dPreB: 6,

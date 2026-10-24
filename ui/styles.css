@@ -114,7 +114,7 @@ tr.comparacion td:last-child { border-radius: 0 10px 10px 0; }
 /* Escritorio: formulario fijo a la izquierda y contenido a la derecha */
 @media (min-width: 1024px) {
   main { grid-template-columns: 380px minmax(0, 1fr); align-items: start; }
-  form { grid-column: 1; grid-row: 1 / span 2; grid-template-columns: 1fr; gap: 20px; }
+  form { grid-column: 1; grid-row: 1 / span 3; grid-template-columns: 1fr; gap: 20px; }
   input { width: 64px; }
   .paneles, #resultados { grid-column: 2; }
   .paneles { grid-template-columns: repeat(2, minmax(0, 1fr)); }

@@ -26,18 +26,37 @@ const etiquetaTiempo = document.getElementById('tiempo');
 
 let animacion = null;
 
-function crearGrafica(id, ejeY, series) {
+// Dibuja una línea vertical punteada en t = tImpacto (si la gráfica la tiene definida).
+const lineaImpacto = {
+  id: 'lineaImpacto',
+  afterDatasetsDraw(chart) {
+    const t = chart.options.tImpacto;
+    if (t == null || !chart.data.datasets[0].data.length) return;
+    const { ctx: c, chartArea: area, scales: { x } } = chart;
+    const xp = x.getPixelForValue(t);
+    if (xp < area.left || xp > area.right) return;
+    c.save();
+    c.strokeStyle = '#ffb000'; c.lineWidth = 1.5; c.setLineDash([4, 4]);
+    c.beginPath(); c.moveTo(xp, area.top); c.lineTo(xp, area.bottom); c.stroke();
+    c.fillStyle = '#8e8e93'; c.font = '11px system-ui'; c.textAlign = 'left';
+    c.fillText('impacto', xp + 4, area.top + 12);
+    c.restore();
+  },
+};
+
+function crearGrafica(id, ejeY, series, { yMin = 0 } = {}) {
   return new Chart(document.getElementById(id), {
     type: 'line',
-    data: { datasets: series.map(([label, color]) => ({ label, data: [], borderColor: color, backgroundColor: color, pointRadius: 0, borderWidth: 2 })) },
+    data: { datasets: series.map(([label, color, dash]) => ({ label, data: [], borderColor: color, backgroundColor: dash ? 'transparent' : color, pointRadius: 0, borderWidth: 2, borderDash: dash ?? [] })) },
     options: {
-      animation: false, maintainAspectRatio: false, parsing: false,
+      animation: false, maintainAspectRatio: false, parsing: false, tImpacto: null,
       scales: {
         x: { type: 'linear', title: { display: true, text: 'Tiempo t (s)' }, min: 0 },
-        y: { title: { display: true, text: ejeY }, min: 0 },
+        y: { title: { display: true, text: ejeY }, min: yMin },
       },
       plugins: { legend: { position: 'bottom' } },
     },
+    plugins: [lineaImpacto],
   });
 }
 
@@ -46,6 +65,43 @@ Chart.defaults.color = '#8e8e93';
 
 const graficaRapidez = crearGrafica('graficaRapidez', 'Rapidez (km/h)', [['Vehículo A', COLOR_A], ['Vehículo B', COLOR_B]]);
 const graficaEnergia = crearGrafica('graficaEnergia', 'Energía cinética (kJ)', [['Vehículo A', COLOR_A], ['Vehículo B', COLOR_B], ['Sistema', '#495057']]);
+const graficaMomento = crearGrafica('graficaMomento', 'Σp (10³ kg·m/s)',
+  [['Σpₓ del sistema', '#2f9e44'], ['Σpᵧ del sistema', '#ae3ec9'], ['|Σp| del sistema', '#495057', [6, 4]]], { yMin: undefined });
+const GRAFICAS_TIEMPO = [graficaRapidez, graficaEnergia, graficaMomento];
+
+// Banda de incertidumbre: barras flotantes [mínimo, máximo] por vehículo y etapa, en km/h.
+const graficaIncertidumbre = new Chart(document.getElementById('graficaIncertidumbre'), {
+  type: 'bar',
+  data: {
+    labels: [['A', 'inicio frenado'], ['A', 'impacto'], ['B', 'inicio frenado'], ['B', 'impacto']],
+    datasets: [
+      { type: 'bar', label: 'Intervalo μmin – μmax', data: [], backgroundColor: [COLOR_A + 'aa', COLOR_A + '66', COLOR_B + 'aa', COLOR_B + '66'],
+        borderColor: [COLOR_A, COLOR_A, COLOR_B, COLOR_B], borderWidth: 1.5, borderSkipped: false, barPercentage: 0.55 },
+      { type: 'line', label: 'μ nominal', data: [], showLine: false, pointRadius: 5, pointBackgroundColor: '#212529', borderColor: '#212529' },
+      { type: 'line', label: 'Límite legal', data: [], showLine: false, pointStyle: 'line', pointRadius: 26, pointBorderWidth: 3, borderColor: '#ff3b30', backgroundColor: '#ff3b30' },
+    ],
+  },
+  options: {
+    animation: false, maintainAspectRatio: false,
+    scales: {
+      x: { title: { display: true, text: 'Vehículo y etapa' }, ticks: { maxRotation: 0, autoSkip: false, font: { size: 11 } } },
+      y: { title: { display: true, text: 'Rapidez (km/h)' }, min: 0 },
+    },
+    plugins: {
+      legend: { position: 'bottom' },
+      tooltip: { callbacks: { label: (c) => Array.isArray(c.raw) ? `${c.dataset.label}: ${num(c.raw[0])} – ${num(c.raw[1])} km/h` : `${c.dataset.label}: ${num(c.raw)} km/h` } },
+    },
+  },
+});
+
+function actualizarIncertidumbre(e, inc) {
+  const claves = ['v0A', 'vA', 'v0B', 'vB'];
+  const [ds, nom, lim] = graficaIncertidumbre.data.datasets;
+  ds.data = claves.map((k) => [msAKmh(inc.min[k]), msAKmh(inc.max[k])]);
+  nom.data = claves.map((k) => msAKmh(inc.nominal[k]));
+  lim.data = [e.vLimA, e.vLimA, e.vLimB, e.vLimB].map(msAKmh);
+  graficaIncertidumbre.update('none');
+}
 
 function cargarEjemplo() {
   for (const k of CAMPOS) {
@@ -192,9 +248,10 @@ function iniciar(e, inc) {
   if (!verif.ok) throw new Error('La simulación no reproduce las posiciones finales.');
 
   const tMax = sim.muestras[sim.muestras.length - 1].t;
-  for (const g of [graficaRapidez, graficaEnergia]) {
+  for (const g of GRAFICAS_TIEMPO) {
     g.data.datasets.forEach((d) => { d.data = []; });
     g.options.scales.x.max = tMax;
+    g.options.tImpacto = sim.tImpacto;
   }
   let i = 0;
   const inicio = performance.now();
@@ -207,12 +264,15 @@ function iniciar(e, inc) {
       graficaEnergia.data.datasets[0].data.push({ x: s.t, y: s.ekA / 1000 });
       graficaEnergia.data.datasets[1].data.push({ x: s.t, y: s.ekB / 1000 });
       graficaEnergia.data.datasets[2].data.push({ x: s.t, y: (s.ekA + s.ekB) / 1000 });
+      const px = (s.pxA + s.pxB) / 1000, py = (s.pyA + s.pyB) / 1000;
+      graficaMomento.data.datasets[0].data.push({ x: s.t, y: px });
+      graficaMomento.data.datasets[1].data.push({ x: s.t, y: py });
+      graficaMomento.data.datasets[2].data.push({ x: s.t, y: Math.hypot(px, py) });
     }
     const actual = Math.max(0, i - 1);
     dibujarEscena(sim, actual);
     etiquetaTiempo.textContent = sim.muestras[actual].t.toFixed(2).replace('.', ',');
-    graficaRapidez.update('none');
-    graficaEnergia.update('none');
+    for (const g of GRAFICAS_TIEMPO) g.update('none');
     if (i < sim.muestras.length) animacion = requestAnimationFrame(paso);
   };
   animacion = requestAnimationFrame(paso);
@@ -222,15 +282,18 @@ function iniciar(e, inc) {
 function vistaPrevia() {
   if (animacion) { cancelAnimationFrame(animacion); animacion = null; }
   etiquetaTiempo.textContent = '0,00';
-  for (const g of [graficaRapidez, graficaEnergia]) {
+  for (const g of GRAFICAS_TIEMPO) {
     g.data.datasets.forEach((d) => { d.data = []; });
+    g.options.tImpacto = null;
     g.update('none');
   }
   try {
     const e = leerFormulario();
     validarEscenario(e);
-    const sim = simularHaciaAdelante(e, propagarIncertidumbre(e).nominal, DT);
+    const inc = propagarIncertidumbre(e);
+    const sim = simularHaciaAdelante(e, inc.nominal, DT);
     dibujarEscena(sim, 0, true);
+    actualizarIncertidumbre(e, inc);
   } catch (err) {
     dibujarCalles(lienzo.width / 2 / 35);
     ctx.fillStyle = '#f1f3f5'; ctx.font = '14px system-ui'; ctx.textAlign = 'center';
@@ -260,6 +323,7 @@ form.addEventListener('submit', (ev) => {
     validarEscenario(e);
     const inc = propagarIncertidumbre(e);
     mostrarResultados(e, inc);
+    actualizarIncertidumbre(e, inc);
     iniciar(e, inc);
     document.getElementById('iniciar').textContent = 'Reiniciar simulación';
     mostrarEstado('valido', 'Resultado válido: reconstrucción calculada con el intervalo de μ indicado.');
