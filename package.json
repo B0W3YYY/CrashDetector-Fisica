@@ -1,0 +1,13 @@
+{
+  "name": "crashdetector",
+  "version": "0.2.0",
+  "description": "CrashDetector: reconstructor forense educativo de accidentes de tránsito (Física I, Avance 2)",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "simulate": "node scripts/headless.js",
+    "start": "node scripts/serve.js"
+  }
+}

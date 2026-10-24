@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CrashDetector</title>
+  <link rel="stylesheet" href="ui/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>CrashDetector</h1>
+    <p>Reconstructor forense de accidentes de tránsito</p>
+  </header>
+
+  <main>
+    <form id="form" novalidate>
+      <fieldset>
+        <legend>Vehículo A (circula en +X)</legend>
+        <label><span>Masa m<sub>A</sub> (kg)</span> <input name="mA" type="number" min="800" max="3500" step="10"></label>
+        <label><span>Frenado pre-impacto d<sub>preA</sub> (m)</span> <input name="dPreA" type="number" min="0" max="50" step="0.1"></label>
+        <label><span>Deslizamiento post-impacto d<sub>postA</sub> (m)</span> <input name="dPostA" type="number" min="0" max="50" step="0.1"></label>
+        <label><span>Ángulo de salida θ<sub>A</sub> (°)</span> <input name="thetaA" type="number" min="0" max="360" step="1"></label>
+        <label><span>Límite legal v<sub>limA</sub> (km/h)</span> <input name="vLimA" type="number" min="30" max="120" step="1"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Vehículo B (circula en +Y)</legend>
+        <label><span>Masa m<sub>B</sub> (kg)</span> <input name="mB" type="number" min="800" max="3500" step="10"></label>
+        <label><span>Frenado pre-impacto d<sub>preB</sub> (m)</span> <input name="dPreB" type="number" min="0" max="50" step="0.1"></label>
+        <label><span>Deslizamiento post-impacto d<sub>postB</sub> (m)</span> <input name="dPostB" type="number" min="0" max="50" step="0.1"></label>
+        <label><span>Ángulo de salida θ<sub>B</sub> (°)</span> <input name="thetaB" type="number" min="0" max="360" step="1"></label>
+        <label><span>Límite legal v<sub>limB</sub> (km/h)</span> <input name="vLimB" type="number" min="30" max="120" step="1"></label>
+      </fieldset>
+      <fieldset>
+        <legend>Superficie (fricción cinética)</legend>
+        <label><span>μ<sub>min</sub> (0,40–0,90)</span> <input name="muMin" type="number" min="0.4" max="0.9" step="0.01"></label>
+        <label><span>μ<sub>max</sub> (0,40–0,90)</span> <input name="muMax" type="number" min="0.4" max="0.9" step="0.01"></label>
+        <p class="nota">g = 9,81 m/s². La animación usa μ nominal = (μ<sub>min</sub> + μ<sub>max</sub>)/2.</p>
+      </fieldset>
+      <div id="estado" role="status" aria-live="polite"></div>
+    </form>
+
+    <section class="paneles">
+      <div class="panel">
+        <h2>Intersección (vista superior)</h2>
+        <canvas id="escena" width="600" height="600" aria-label="Animación de la intersección"></canvas>
+        <p class="nota">Tiempo: <span id="tiempo">0,00</span> s</p>
+        <button type="submit" form="form" id="iniciar">Iniciar simulación</button>
+      </div>
+      <div class="panel panel-graficas">
+        <h2>Rapidez vs tiempo</h2>
+        <div class="grafica"><canvas id="graficaRapidez"></canvas></div>
+        <h2>Energía cinética vs tiempo</h2>
+        <div class="grafica"><canvas id="graficaEnergia"></canvas></div>
+      </div>
+    </section>
+
+    <section class="panel" id="resultados" hidden>
+      <h2>Resultados de la reconstrucción</h2>
+      <p class="nota">Intervalos calculados con μ<sub>min</sub> – μ<sub>max</sub>.</p>
+      <div class="tabla"><table>
+        <thead><tr><th scope="col">Magnitud</th><th scope="col"><span class="marca marca-a"></span>Vehículo A</th><th scope="col"><span class="marca marca-b"></span>Vehículo B</th></tr></thead>
+        <tbody id="tablaResultados"></tbody>
+      </table></div>
+      <div id="resumen"></div>
+      <p class="aviso">Estimación educativa basada únicamente en las entradas y las hipótesis del modelo
+        (fricción constante, superficie horizontal, direcciones previas perpendiculares conocidas, impulso
+        externo despreciable durante el choque). No constituye un dictamen pericial.<br>
+        No modelado: incertidumbre en masas, distancias y ángulos; pendientes, rotación de los vehículos y frenado parcial (ABS).</p>
+    </section>
+  </main>
+
+  <script type="module" src="ui/app.js"></script>
+</body>
+</html>

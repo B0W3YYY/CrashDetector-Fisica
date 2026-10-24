@@ -1,0 +1,133 @@
+/* Estilo inspirado en las apps de iOS: fondo agrupado, listas con separadores finos,
+   tarjetas redondeadas y la tipografía del sistema. */
+:root {
+  --fondo: #f2f2f7;          /* systemGroupedBackground */
+  --panel: #ffffff;
+  --texto: #000000;
+  --suave: #8e8e93;          /* secondaryLabel */
+  --separador: #c6c6c8;
+  --relleno: #f2f2f7;        /* fondo de celdas secundarias */
+  --acento: #007aff;         /* systemBlue */
+  --ok: #34c759;
+  --alerta: #ff9500;
+  --error: #ff3b30;
+  --radio: 12px;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 17px;
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Título grande al estilo de la barra de navegación de iOS */
+header { max-width: 1400px; margin: 0 auto; padding: 28px 16px 4px; }
+header h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: .01em; }
+header p { margin: 2px 0 0; color: var(--suave); font-size: 15px; }
+main { max-width: 1400px; margin: 0 auto; padding: 16px 16px 40px; display: grid; gap: 24px; }
+
+/* Formulario como lista agrupada */
+form { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px 16px; align-items: start; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+legend {
+  padding: 0 16px 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .02em; color: var(--suave);
+}
+label {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: var(--panel); padding: 11px 16px; min-height: 44px; font-size: 16px; position: relative;
+}
+label:first-of-type { border-radius: var(--radio) var(--radio) 0 0; }
+label:last-of-type { border-radius: 0 0 var(--radio) var(--radio); }
+label:only-of-type { border-radius: var(--radio); }
+label + label::before {
+  content: ""; position: absolute; top: 0; left: 16px; right: 0; border-top: .5px solid var(--separador);
+}
+input {
+  width: 90px; padding: 4px 0; border: 0; background: transparent; text-align: right;
+  font: inherit; color: var(--suave); font-variant-numeric: tabular-nums;
+}
+input:focus { outline: none; color: var(--acento); }
+input[aria-invalid="true"] { color: var(--error); }
+fieldset .nota { padding: 6px 16px 0; }
+
+/* Botón principal */
+button {
+  width: 100%; padding: 14px 16px; border: 0; border-radius: var(--radio);
+  background: var(--acento); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+}
+button:active { opacity: .7; }
+button:focus-visible { outline: 3px solid rgba(0, 122, 255, .4); outline-offset: 2px; }
+#iniciar { margin-top: 12px; }
+
+/* Mensaje de estado */
+#estado { grid-column: 1 / -1; padding: 12px 16px; border-radius: var(--radio); background: var(--panel); font-size: 15px; display: none; }
+#estado.valido, #estado.insuficiente, #estado.error { display: block; }
+#estado.valido { color: #248a3d; }
+#estado.insuficiente { color: #c93400; }
+#estado.error { color: #d70015; }
+
+/* Tarjetas */
+.paneles { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.panel { background: var(--panel); border-radius: var(--radio); padding: 16px; min-width: 0; }
+.panel h2 { font-size: 20px; font-weight: 600; margin: 0 0 10px; }
+.panel h2 ~ h2 { margin-top: 20px; }
+#escena { width: 100%; height: auto; aspect-ratio: 1; display: block; border-radius: 10px; background: #3b4250; }
+.panel-graficas { display: flex; flex-direction: column; }
+.grafica { position: relative; height: 240px; }
+.nota { color: var(--suave); font-size: 13px; margin: 8px 0 0; }
+
+/* Tabla de resultados como lista agrupada */
+.tabla { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { padding: 12px; text-align: left; vertical-align: top; border-bottom: .5px solid var(--separador); }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+thead th { font-size: 13px; font-weight: 400; text-transform: uppercase; letter-spacing: .02em; color: var(--suave); }
+tbody th { font-weight: 400; }
+td { text-align: right; white-space: nowrap; }
+thead th:not(:first-child) { text-align: right; }
+.simbolo { display: block; color: var(--suave); font-size: 13px; font-style: italic; }
+.cantidad { white-space: nowrap; }
+.valor { font-variant-numeric: tabular-nums; font-weight: 600; }
+.unidad { color: var(--suave); font-size: 13px; }
+.marca { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.marca-a { background: #f76707; }
+.marca-b { background: #1c5bd9; }
+tr.comparacion th, tr.comparacion td { background: var(--relleno); }
+tr.comparacion th { border-radius: 10px 0 0 10px; }
+tr.comparacion td:last-child { border-radius: 0 10px 10px 0; }
+.detalle { display: block; color: var(--suave); font-size: 13px; white-space: normal; }
+.excede { color: var(--error); font-weight: 600; }
+.no-excede { color: var(--ok); font-weight: 600; }
+.indeterminado { color: var(--alerta); font-weight: 600; }
+
+#resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; margin: 16px 0; }
+.dato { background: var(--relleno); border-radius: var(--radio); padding: 14px 16px; }
+.dato h3 { margin: 0 0 8px; font-size: 13px; font-weight: 400; color: var(--suave); }
+.dato .fila { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; font-size: 15px; }
+.dato .grande { font-size: 22px; font-weight: 600; }
+.aviso { background: var(--relleno); padding: 12px 16px; font-size: 13px; line-height: 1.5; border-radius: var(--radio); color: #3c3c43; margin: 0; }
+
+/* Escritorio: formulario fijo a la izquierda y contenido a la derecha */
+@media (min-width: 1024px) {
+  main { grid-template-columns: 380px minmax(0, 1fr); align-items: start; }
+  form { grid-column: 1; grid-row: 1 / span 2; grid-template-columns: 1fr; gap: 20px; }
+  input { width: 64px; }
+  .paneles, #resultados { grid-column: 2; }
+  .paneles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Las gráficas reparten la altura del panel de la intersección */
+  .panel-graficas .grafica { flex: 1; height: auto; min-height: 200px; }
+}
+
+@media (max-width: 480px) {
+  header h1 { font-size: 30px; }
+  main { padding: 12px 16px; }
+  label { font-size: 15px; }
+  th, td { padding: 10px 4px; font-size: 13px; }
+  td, td .cantidad { white-space: normal; }
+  td .valor { white-space: nowrap; display: block; }
+  thead th { letter-spacing: 0; font-size: 11px; }
+}
